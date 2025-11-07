@@ -199,3 +199,9 @@ app.listen(PORT, () => {
   console.log(`🚀 Server draait op poort ${PORT}`);
 });
 
+app.post('/', (req, res) => {
+  console.log('📩 WhatsApp webhook ontvangen');
+  console.log(JSON.stringify(req.body, null, 2));
+  res.sendStatus(200);
+});
+
