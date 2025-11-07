@@ -1,6 +1,8 @@
+
 require('dotenv').config();
 const express = require('express');
-const fetch = require('node-fetch');
+const fetch = (...args) => import('node-fetch').then(m => m.default(...args));
+
 const app = express();
 app.use(express.json());
 
@@ -9,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 
 // Realworks config
 const RW_BASE = process.env.REALWORKS_API_BASE;
-const RW_TOKEN = process.env.REALWORKS_API_TOKEN;
+const RW_TOKEN = 'rwauth ' + process.env.REALWORKS_API_TOKEN;
 const RW_AFDELINGSCODE = process.env.REALWORKS_AFDELINGSCODE;
 
 // WhatsApp config
