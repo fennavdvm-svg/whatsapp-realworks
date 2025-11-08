@@ -113,27 +113,51 @@ function mapRealworksObjectToInternalModel(rw) {
 const zoekprofielen = [
   {
     id: 1,
-    zoekerNaam: 'Test Zoeker',
+    zoekerNaam: 'Fenna Test',
     telefoon: '0612345678',
     whatsappOptIn: true,
-    harde: { plaatsen: ['Rotterdam'], prijsMin: 300000, prijsMax: 500000 },
-    zachte: { minKamers: 3, minM2: 70, energielabelMin: 'C' },
-  },
+    harde: {
+      plaatsen: ['Schiedam', 'Vlaardingen', 'Rotterdam'],
+      prijsMin: 250000,
+      prijsMax: 500000,
+      type: ['Appartement', 'Eengezinswoning']
+    },
+    zachte: {
+      minKamers: 3,
+      minM2: 70,
+      energielabelMin: 'C',
+      buitenruimte: true
+    }
+  }
 ];
 
+// ----------------------------------------------------
+// 5️⃣ Matching-logica
+// ----------------------------------------------------
 function voldoetAanHardeWensen(woning, harde) {
-  return (
-    (!harde.plaatsen || harde.plaatsen.includes(woning.plaats)) &&
-    woning.vraagprijs >= harde.prijsMin &&
-    woning.vraagprijs <= harde.prijsMax
-  );
+  const juistePlaats = !harde.plaatsen || harde.plaatsen.includes(woning.plaats);
+  const juistePrijs =
+    (!harde.prijsMin || woning.vraagprijs >= harde.prijsMin) &&
+    (!harde.prijsMax || woning.vraagprijs <= harde.prijsMax);
+  const juistType =
+    !harde.type || harde.type.includes(woning.objectsoort);
+
+  return juistePlaats && juistePrijs && juistType;
 }
 
 function scoreZachteWensen(woning, zachte) {
   let score = 100;
-  if (woning.kamers < zachte.minKamers) score -= 20;
-  if (woning.woonoppervlakte < zachte.minM2) score -= 20;
-  return Math.max(score, 0);
+  if (woning.kamers < (zachte.minKamers || 0)) score -= 20;
+  if (woning.woonoppervlakte < (zachte.minM2 || 0)) score -= 20;
+
+  const labels = ['A++', 'A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G'];
+  const indexWoning = labels.indexOf(woning.energielabel || 'G');
+  const indexMin = labels.indexOf(zachte.energielabelMin || 'G');
+  if (indexWoning > indexMin) score -= 10;
+
+  if (zachte.buitenruimte && woning.buitenruimte) score += 5;
+
+  return Math.max(Math.min(score, 100), 0);
 }
 
 function vindMatchesVoorWoning(woning) {
@@ -141,12 +165,14 @@ function vindMatchesVoorWoning(woning) {
   for (const zp of zoekprofielen) {
     if (!zp.whatsappOptIn) continue;
     if (!voldoetAanHardeWensen(woning, zp.harde)) continue;
+
     const score = scoreZachteWensen(woning, zp.zachte);
-    if (score >= MATCH_THRESHOLD) matches.push({ zoekprofiel: zp, score });
+    if (score >= MATCH_THRESHOLD) {
+      matches.push({ zoekprofiel: zp, score });
+    }
   }
   return matches;
 }
-
 // ----------------------------------------------------
 // 5️⃣ WhatsApp bericht sturen
 // ----------------------------------------------------
