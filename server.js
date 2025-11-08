@@ -233,6 +233,8 @@ async function sendWhatsAppAanbod(zoekprofiel, woning) {
   const to = '31' + zoekprofiel.telefoon.replace(/^0/, '');
   const url = `https://graph.facebook.com/${WA_VERSION}/${WA_PHONE_NUMBER_ID}/messages`;
 
+  console.log('📤 WhatsApp request naar:', to, 'via phone_number_id:', WA_PHONE_NUMBER_ID);
+
   const payload = {
     messaging_product: 'whatsapp',
     to,
@@ -256,6 +258,9 @@ async function sendWhatsAppAanbod(zoekprofiel, woning) {
       ],
     },
   };
+
+  // ... fetch-call zoals je al had
+}
 
   const res = await fetch(url, {
     method: 'POST',
