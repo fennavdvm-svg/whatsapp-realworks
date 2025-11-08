@@ -175,13 +175,25 @@ const zoekprofielen = [
 // ----------------------------------------------------
 // 5️⃣ Matching-logica
 // ----------------------------------------------------
+function normalize(str) {
+  return (str || '').toString().trim().toUpperCase();
+}
+
 function voldoetAanHardeWensen(woning, harde) {
-  const juistePlaats = !harde.plaatsen || harde.plaatsen.includes(woning.plaats);
+  // Plaatsvergelijking hoofdletter-onafhankelijk
+  const juistePlaats =
+    !harde.plaatsen ||
+    harde.plaatsen.map(normalize).includes(normalize(woning.plaats));
+
+  // Prijsvergelijking zoals je al had
   const juistePrijs =
     (!harde.prijsMin || woning.vraagprijs >= harde.prijsMin) &&
     (!harde.prijsMax || woning.vraagprijs <= harde.prijsMax);
+
+  // Type ook hoofdletter-onafhankelijk, voor de zekerheid
   const juistType =
-    !harde.type || harde.type.includes(woning.objectsoort);
+    !harde.type ||
+    harde.type.map(normalize).includes(normalize(woning.objectsoort));
 
   return juistePlaats && juistePrijs && juistType;
 }
