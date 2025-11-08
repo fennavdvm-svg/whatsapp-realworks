@@ -260,7 +260,6 @@ async function sendWhatsAppAanbod(zoekprofiel, woning) {
   };
 
   // ... fetch-call zoals je al had
-}
 
   const res = await fetch(url, {
     method: 'POST',
