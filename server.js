@@ -42,25 +42,30 @@ app.get('/', (req, res) => {
 // ----------------------------------------------------
 // 2️⃣ Realworks webhook ontvangen
 // ----------------------------------------------------
+
 app.post('/realworks', async (req, res) => {
   console.log('\n🏠 Realworks webhook ontvangen');
   console.log(JSON.stringify(req.body, null, 2));
 
-  const objectUrl = req.body.objectUrl;
+  const { objectUrl } = req.body;
   if (!objectUrl) {
     console.log('❌ Geen objectUrl in webhook');
     return res.sendStatus(200);
   }
 
   try {
-    const woningRaw = await fetch(objectUrl, {
+    const response = await fetch(objectUrl, {
       headers: {
         Authorization: RW_TOKEN,
         Accept: 'application/json',
       },
-    }).then(r => r.json());
-console.log('🔍 Raw woning van Realworks:');
-console.log(JSON.stringify(woningRaw, null, 2));
+    });
+
+    console.log('🌐 Realworks response status:', response.status);
+
+    const woningRaw = await response.json();
+    console.log('🔍 Raw woning van Realworks:');
+    console.log(JSON.stringify(woningRaw, null, 2));
 
     const woning = mapRealworksObjectToInternalModel(woningRaw);
     console.log('📦 Gemapte woning:', woning);
