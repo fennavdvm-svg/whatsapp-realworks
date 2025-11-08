@@ -59,6 +59,8 @@ app.post('/realworks', async (req, res) => {
         Accept: 'application/json',
       },
     }).then(r => r.json());
+console.log('🔍 Raw woning van Realworks:');
+console.log(JSON.stringify(woningRaw, null, 2));
 
     const woning = mapRealworksObjectToInternalModel(woningRaw);
     console.log('📦 Gemapte woning:', woning);
