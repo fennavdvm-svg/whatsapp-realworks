@@ -155,7 +155,7 @@ const zoekprofielen = [
   {
     id: 1,
     zoekerNaam: 'Fenna Test',
-    telefoon: '0612345678',
+    telefoon: '0613185813',
     whatsappOptIn: true,
     harde: {
       plaatsen: ['Schiedam', 'Vlaardingen', 'Rotterdam'],
