@@ -88,29 +88,63 @@ app.post('/realworks', async (req, res) => {
 // 3️⃣ Mapping Realworks -> intern woning model
 // ----------------------------------------------------
 function mapRealworksObjectToInternalModel(rw) {
+  // Handige shortcuts
   const adres = rw.adres || {};
-  const huisnr = adres.huisnummer || {};
   const algemeen = rw.algemeen || {};
-  const prijs = rw.prijs || rw.financieel || {};
-  const opp = rw.oppervlakte || rw.maten || {};
-  const energie = rw.energie || rw.energielabel || {};
-  const links = rw.links || {};
+  const detail = rw.detail || {};
+  const buiten = detail.buitenruimte || {};
+  const financieel = rw.financieel || {};
+  const overdracht = financieel.overdracht || {};
+  const diversen = (rw.diversen && rw.diversen.diversen) || {};
+  const typeInfo = (rw.object && rw.object.type) || {};
 
-  const huisnummer = `${huisnr.hoofdnummer || ''}${huisnr.toevoeging ? ' ' + huisnr.toevoeging : ''}`.trim();
+  // Huisnummer + toevoeging combineren
+  const huisnummer = `${adres.huisnummer || ''}${adres.huisnummertoevoeging ? ' ' + adres.huisnummertoevoeging : ''}`.trim();
+
+  // Vraagprijs uit financieel.overdracht.koopprijs (Realworks)
+  const vraagprijsRuw =
+    overdracht.koopprijs ??
+    overdracht.transactieprijs ??
+    0;
+
+  // Woonoppervlakte uit algemeen.woonoppervlakte
+  const woonoppRuw = algemeen.woonoppervlakte || 0;
+
+  // Energielabel uit algemeen.energieklasse
+  const energieLabel = algemeen.energieklasse || null;
+
+  // Buitenruimte bepalen op basis van tuintypes
+  let buitenruimte = 'GEEN';
+  if (buiten.tuintypes && Array.isArray(buiten.tuintypes) && buiten.tuintypes.length > 0) {
+    // Er is in elk geval een tuin (bijv. ACHTERTUIN)
+    buitenruimte = 'TUIN';
+  }
+
+  // Objectsoort uit object.type.objecttype
+  let objectsoort = 'woning';
+  if (typeInfo.objecttype === 'APPARTEMENT') objectsoort = 'Appartement';
+  else if (typeInfo.objecttype === 'WOONHUIS') objectsoort = 'Woonhuis';
+  else if (typeInfo.objecttype) objectsoort = typeInfo.objecttype;
 
   return {
-    id: rw.objectcode || rw.id || null,
+    // ID uit rw.id of diversen.objectcode
+    id: rw.id || diversen.objectcode || null,
+
     straat: adres.straat || null,
     huisnummer,
     plaats: adres.plaats || null,
     postcode: adres.postcode || null,
-    vraagprijs: Number(prijs.vraagprijs || 0),
+
+    vraagprijs: Number(vraagprijsRuw || 0),
     kamers: Number(algemeen.aantalKamers || 0),
-    woonoppervlakte: Number(opp.woonoppervlakte || 0),
-    energielabel: energie.energielabel || null,
-    buitenruimte: rw.tuin ? 'TUIN' : 'BALKON',
-    objectsoort: algemeen.soort || 'woning',
-    fundaUrl: links.funda || null,
+    woonoppervlakte: Number(woonoppRuw || 0),
+
+    energielabel: energieLabel,
+    buitenruimte,
+    objectsoort,
+
+    // Kun je later vullen als je een Funda-link of eigen website-link hebt
+    fundaUrl: null,
   };
 }
 
