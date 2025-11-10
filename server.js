@@ -241,7 +241,7 @@ async function sendWhatsAppAanbod(zoekprofiel, woning) {
     type: 'template',
     template: {
       name: 'hello_world',
-      language: { code: 'US' },
+      language: { code: 'en_US' },
       components: [
         {
           type: 'body',
