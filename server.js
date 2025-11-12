@@ -85,66 +85,62 @@ app.post('/realworks', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// 3️⃣ Mapping Realworks -> intern woning model
-// ----------------------------------------------------
 function mapRealworksObjectToInternalModel(rw) {
-  // Handige shortcuts
   const adres = rw.adres || {};
+  const huisnr = adres.huisnummer || {};
   const algemeen = rw.algemeen || {};
   const detail = rw.detail || {};
   const buiten = detail.buitenruimte || {};
-  const financieel = rw.financieel || {};
-  const overdracht = financieel.overdracht || {};
+  const financieel = (rw.financieel && rw.financieel.overdracht) || {};
   const diversen = (rw.diversen && rw.diversen.diversen) || {};
-  const typeInfo = (rw.object && rw.object.type) || {};
+  const objectType = (rw.object && rw.object.type) || {};
 
-  // Huisnummer + toevoeging combineren
-  const huisnummer = `${adres.huisnummer || ''}${adres.huisnummertoevoeging ? ' ' + adres.huisnummertoevoeging : ''}`.trim();
+  // 🏠 Huisnummer samenvoegen
+  const huisnummerStr = `${huisnr.hoofdnummer || ''}${huisnr.toevoeging ? ' ' + huisnr.toevoeging : ''}`.trim();
 
-  // Vraagprijs uit financieel.overdracht.koopprijs (Realworks)
-  const vraagprijsRuw =
-    overdracht.koopprijs ??
-    overdracht.transactieprijs ??
-    0;
-
-  // Woonoppervlakte uit algemeen.woonoppervlakte
-  const woonoppRuw = algemeen.woonoppervlakte || 0;
-
-  // Energielabel uit algemeen.energieklasse
-  const energieLabel = algemeen.energieklasse || null;
-
-  // Buitenruimte bepalen op basis van tuintypes
-  let buitenruimte = 'GEEN';
-  if (buiten.tuintypes && Array.isArray(buiten.tuintypes) && buiten.tuintypes.length > 0) {
-    // Er is in elk geval een tuin (bijv. ACHTERTUIN)
-    buitenruimte = 'TUIN';
+  // 🖼️ Hoofdfoto uit media[]
+  let imageUrl = null;
+  if (Array.isArray(rw.media)) {
+    const hoofd = rw.media.find(m => m.soort === 'HOOFDFOTO' && m.link);
+    if (hoofd) {
+      imageUrl = hoofd.link;
+    }
   }
 
-  // Objectsoort uit object.type.objecttype
-  let objectsoort = 'woning';
-  if (typeInfo.objecttype === 'APPARTEMENT') objectsoort = 'Appartement';
-  else if (typeInfo.objecttype === 'WOONHUIS') objectsoort = 'Woonhuis';
-  else if (typeInfo.objecttype) objectsoort = typeInfo.objecttype;
+  // 🌳 Simpele indicatie buitenruimte
+  let buitenruimte = '';
+  if (Array.isArray(buiten.tuintypes) && buiten.tuintypes.length > 0) {
+    buitenruimte = 'TUIN';
+  } else if ((buiten.oppervlakteGebouwgebondenBuitenruimte || 0) > 0) {
+    buitenruimte = 'BALKON';
+  }
+
+  // 💶 Vraagprijs (koopprijs als die er is, anders transactiewaarde)
+  const vraagprijs =
+    Number(financieel.koopprijs || financieel.transactieprijs || 0);
 
   return {
-    // ID uit rw.id of diversen.objectcode
-    id: rw.id || diversen.objectcode || null,
-
+    id: diversen.objectcode || rw.id || null,
     straat: adres.straat || null,
-    huisnummer,
+    huisnummer: huisnummerStr,
     plaats: adres.plaats || null,
     postcode: adres.postcode || null,
 
-    vraagprijs: Number(vraagprijsRuw || 0),
+    vraagprijs,
+
     kamers: Number(algemeen.aantalKamers || 0),
-    woonoppervlakte: Number(woonoppRuw || 0),
+    woonoppervlakte: Number(algemeen.woonoppervlakte || 0),
 
-    energielabel: energieLabel,
+    energielabel: algemeen.energieklasse || null,
+
     buitenruimte,
-    objectsoort,
+    objectsoort: objectType.objecttype || algemeen.woonhuissoort || 'woning',
 
-    // Kun je later vullen als je een Funda-link of eigen website-link hebt
+    // fundaUrl staat niet in dit v3-voorbeeld; later kun je die nog toevoegen als je de key weet
     fundaUrl: null,
+
+    // 🔥 Belangrijk voor je WhatsApp IMAGE-header
+    imageUrl
   };
 }
 
@@ -233,6 +229,8 @@ async function sendWhatsAppAanbod(zoekprofiel, woning) {
   // 06… → 316…
   const to = '31' + zoekprofiel.telefoon.replace(/^0/, '');
   const url = `https://graph.facebook.com/${WA_VERSION}/${WA_PHONE_NUMBER_ID}/messages`;
+const fallbackImageUrl = 'https://via.placeholder.com/600x400?text=Nieuw+aanbod';
+const imageUrl = woning.imageUrl || fallbackImageUrl;
 
   const payload = {
     messaging_product: 'whatsapp',
