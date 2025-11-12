@@ -230,52 +230,57 @@ function vindMatchesVoorWoning(woning) {
 // 5️⃣ WhatsApp bericht sturen
 // ----------------------------------------------------
 async function sendWhatsAppAanbod(zoekprofiel, woning) {
+  // 06… → 316…
   const to = '31' + zoekprofiel.telefoon.replace(/^0/, '');
   const url = `https://graph.facebook.com/${WA_VERSION}/${WA_PHONE_NUMBER_ID}/messages`;
-
-  console.log('📤 WhatsApp request naar:', to, 'via phone_number_id:', WA_PHONE_NUMBER_ID);
 
   const payload = {
     messaging_product: 'whatsapp',
     to,
     type: 'template',
     template: {
-      name: 'hello_world',
-      language: { code: 'en_US' },
+      // ⚠️ Moet exact gelijk zijn aan de naam in Meta
+      name: 'aanbod_brochure',
+      language: { code: 'nl' }, // "Dutch" in je template-scherm
       components: [
         {
           type: 'body',
           parameters: [
-            { type: 'text', text: woning.plaats || '' },
-            { type: 'text', text: `${woning.straat} ${woning.huisnummer}` },
-            { type: 'text', text: woning.kamers.toString() },
-            { type: 'text', text: woning.objectsoort },
-            { type: 'text', text: woning.woonoppervlakte.toString() },
-            { type: 'text', text: woning.buitenruimte || '' },
-            { type: 'text', text: woning.energielabel || '' },
-          ],
-        },
-      ],
-    },
+            { type: 'text', text: woning.plaats || '' },                                        // {{1}}
+            { type: 'text', text: `${woning.straat || ''} ${woning.huisnummer || ''}`.trim() }, // {{2}}
+            { type: 'text', text: `${woning.kamers ?? ''}` },                                   // {{3}}
+            { type: 'text', text: woning.objectsoort || '' },                                   // {{4}}
+            { type: 'text', text: `${woning.woonoppervlakte ?? ''}` },                          // {{5}}
+            { type: 'text', text: woning.buitenruimte || '' },                                  // {{6}}
+            { type: 'text', text: woning.energielabel || '' },                                  // {{7}}
+          ]
+        }
+      ]
+    }
   };
 
-  // ... fetch-call zoals je al had
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${WA_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${WA_ACCESS_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    console.error('❌ WhatsApp API fout', await res.text());
-  } else {
-    console.log(`✅ WhatsApp verzonden naar ${zoekprofiel.telefoon}`);
+    const text = await res.text();
+    if (!res.ok) {
+      console.error('❌ WhatsApp API fout', text);
+    } else {
+      console.log(`✅ WhatsApp verzonden naar ${zoekprofiel.telefoon}`);
+      console.log('📨 API-respons:', text);
+    }
+  } catch (err) {
+    console.error('❌ Onverwachte fout bij WhatsApp-verzoek:', err);
   }
 }
+
 
 // ----------------------------------------------------
 // 6️⃣ Start server
