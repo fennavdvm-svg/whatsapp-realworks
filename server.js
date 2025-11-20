@@ -90,58 +90,107 @@ function mapRealworksObjectToInternalModel(rw) {
   const adres = rw.adres || {};
   const huisnr = adres.huisnummer || {};
   const algemeen = rw.algemeen || {};
-  const detail = rw.detail || {};
-  const buiten = detail.buitenruimte || {};
-  const financieel = (rw.financieel && rw.financieel.overdracht) || {};
-  const diversen = (rw.diversen && rw.diversen.diversen) || {};
-  const objectType = (rw.object && rw.object.type) || {};
+  const prijs = rw.prijs || rw.financieel || {};
+  const opp = rw.oppervlakte || rw.maten || {};
+  const energie = rw.energie || rw.energielabel || {};
+const detail = rw.detail || {};
+const buiten = detail.buitenruimte || {};
+const financieel = (rw.financieel && rw.financieel.overdracht) || {};
+const diversen = (rw.diversen && rw.diversen.diversen) || {};
+const objectType = (rw.object && rw.object.type) || {};
+// ðŸ Huisnummer samenvoegen
+const huisnummerStr = `${huisnr.hoofdnummer || ''}${huisnr.toevoeging ? ' ' +
+huisnr.toevoeging : ''}`.trim();
+// ðŸ–¼ï¸ Hoofdfoto uit media[]
+let imageUrl = null;
+if (Array.isArray(rw.media)) {
+const hoofd = rw.media.find(m => m.soort === 'HOOFDFOTO' && m.link);
+if (hoofd) {
+imageUrl = hoofd.link;
+}
+}
+// ðŸŒ³ Simpele indicatie buitenruimte
+let buitenruimte = '';
+if (Array.isArray(buiten.tuintypes) && buiten.tuintypes.length > 0) {
+buitenruimte = 'TUIN';
+} else if ((buiten.oppervlakteGebouwgebondenBuitenruimte || 0) > 0) {
+buitenruimte = 'BALKON';
+}
+// ðŸ’¶ Vraagprijs (koopprijs als die er is, anders transactiewaarde)
+const vraagprijs =
+Number(financieel.koopprijs || financieel.transactieprijs || 0);
 
-  // 🏠 Huisnummer samenvoegen
-  const huisnummerStr = `${huisnr.hoofdnummer || ''}${huisnr.toevoeging ? ' ' + huisnr.toevoeging : ''}`.trim();
 
-  // 🖼️ Hoofdfoto uit media[]
-  let imageUrl = null;
+  // -----------------------------
+  // Links / media uit Realworks
+  // -----------------------------
+  const linksRaw = rw.links;
+
+  // Als rw.links een object is (met bv. links.funda)
+  const linksObj =
+    linksRaw && !Array.isArray(linksRaw) && typeof linksRaw === 'object'
+      ? linksRaw
+      : {};
+
+  // Kandidaten waar een brochure-DOCUMENT in kan zitten
+  let mediaCandidates = [];
+
+  if (Array.isArray(linksRaw)) {
+    mediaCandidates = mediaCandidates.concat(linksRaw);
+  }
   if (Array.isArray(rw.media)) {
-    const hoofd = rw.media.find(m => m.soort === 'HOOFDFOTO' && m.link);
-    if (hoofd) {
-      imageUrl = hoofd.link;
-    }
+    mediaCandidates = mediaCandidates.concat(rw.media);
+  }
+  if (Array.isArray(rw.documenten)) {
+    mediaCandidates = mediaCandidates.concat(rw.documenten);
   }
 
-  // 🌳 Simpele indicatie buitenruimte
-  let buitenruimte = '';
-  if (Array.isArray(buiten.tuintypes) && buiten.tuintypes.length > 0) {
-    buitenruimte = 'TUIN';
-  } else if ((buiten.oppervlakteGebouwgebondenBuitenruimte || 0) > 0) {
-    buitenruimte = 'BALKON';
-  }
+  // Zoek een DOCUMENT met titel/omschrijving die 'brochure' bevat
+  const brochureDoc = mediaCandidates.find((item) => {
+    if (!item) return false;
+    const titel = (item.titel || '').toLowerCase();
+    const omschrijving = (item.omschrijving || '').toLowerCase();
+    return (
+      item.soort === 'DOCUMENT' &&
+      (titel.includes('brochure') || omschrijving.includes('brochure'))
+    );
+  });
 
-  // 💶 Vraagprijs (koopprijs als die er is, anders transactiewaarde)
-  const vraagprijs =
-    Number(financieel.koopprijs || financieel.transactieprijs || 0);
+  const brochureUrl = brochureDoc && brochureDoc.link ? brochureDoc.link : null;
 
-  return {
-    id: diversen.objectcode || rw.id || null,
-    straat: adres.straat || null,
-    huisnummer: huisnummerStr,
-    plaats: adres.plaats || null,
-    postcode: adres.postcode || null,
+  // -----------------------------
+  // Adres samenstellen
+  // -----------------------------
+  const huisnummer = `${huisnr.hoofdnummer || ''}${
+    huisnr.toevoeging ? ' ' + huisnr.toevoeging : ''
+  }`.trim();
 
-    vraagprijs,
+  // -----------------------------
+  // Teruggeven in jouw interne vorm
+  // -----------------------------
 
-    kamers: Number(algemeen.aantalKamers || 0),
-    woonoppervlakte: Number(algemeen.woonoppervlakte || 0),
-
-    energielabel: algemeen.energieklasse || null,
-
-    buitenruimte,
-    objectsoort: objectType.objecttype || algemeen.woonhuissoort || 'woning',
-
-    // fundaUrl staat niet in dit v3-voorbeeld; later kun je die nog toevoegen als je de key weet
-    fundaUrl: null,
-
-    // 🔥 Belangrijk voor je WhatsApp IMAGE-header
-    imageUrl
+return {
+id: diversen.objectcode || rw.id || null,
+straat: adres.straat || null,
+huisnummer: huisnummerStr,
+plaats: adres.plaats || null,
+postcode: adres.postcode || null,
+vraagprijs,
+file:///Users/fennavandevijvermakelaardij/whatsapp-realworks/server.js
+Pagina 2 van 5
+20-11-2025, 02:05
+kamers: Number(algemeen.aantalKamers || 0),
+woonoppervlakte: Number(algemeen.woonoppervlakte || 0),
+energielabel: algemeen.energieklasse || null,
+buitenruimte,
+objectsoort: objectType.objecttype || algemeen.woonhuissoort || 'woning',
+// fundaUrl staat niet in dit v3-voorbeeld; later kun je die nog toevoegen als je de key
+weet
+fundaUrl: null,
+// ðŸ”¥ Belangrijk voor je WhatsApp IMAGE-header
+imageUrl
+    // ✨ NIEUW veld voor WhatsApp
+    brochureUrl,
   };
 }
 
@@ -226,38 +275,83 @@ function vindMatchesVoorWoning(woning) {
 // ----------------------------------------------------
 // 5️⃣ WhatsApp bericht sturen
 // ----------------------------------------------------
+// ---------------------------------------------------------------------------
+//  WhatsApp bericht sturen (met of zonder brochure)
+// ---------------------------------------------------------------------------
 async function sendWhatsAppAanbod(zoekprofiel, woning) {
-  // 06… → 316…
+  // 06… -> 316….
   const to = '31' + zoekprofiel.telefoon.replace(/^0/, '');
-  const url = `https://graph.facebook.com/${WA_VERSION}/${WA_PHONE_NUMBER_ID}/messages`;
-const fallbackImageUrl = 'https://via.placeholder.com/600x400?text=Nieuw+aanbod';
-const imageUrl = woning.imageUrl || fallbackImageUrl;
 
+  const url = `https://graph.facebook.com/${WA_VERSION}/${WA_PHONE_NUMBER_ID}/messages`;
+
+  // Fallback afbeelding voor je oude template (optioneel)
+  const fallbackImageUrl = 'https://via.placeholder.com/600x400?text=Nieuw+aanbod';
+  const imageUrl = woning.imageUrl || fallbackImageUrl;
+
+  // Check of er een brochure aanwezig is
+  const hasBrochure = !!woning.brochureUrl;
+
+  // Template kiezen
+  const templateName = hasBrochure
+    ? 'aanbod_brochure_pdf'      // Template met document-header
+    : 'aanbod_zonder_brochure';  // Jouw bestaande template
+
+  console.log(`📨 Template gekozen: ${templateName}`);
+
+  // -----------------------------------------------------
+  // Bouw de components op basis van wel/geen brochure
+  // -----------------------------------------------------
+  const components = [];
+
+  // 1️⃣ HEADER alleen als brochure bestaat
+  if (hasBrochure) {
+    components.push({
+      type: 'header',
+      parameters: [
+        {
+          type: 'document',
+          document: {
+            link: woning.brochureUrl,
+            filename: `Brochure - ${woning.straat} ${woning.huisnummer}.pdf`
+          }
+        }
+      ]
+    });
+  }
+
+  // 2️⃣ BODY (zelfde in beide templates)
+  components.push({
+    type: 'body',
+    parameters: [
+      { type: 'text', text: woning.plaats || '' },                         // {{1}}
+      { type: 'text', text: `${woning.straat || ''} ${woning.huisnummer || ''}`.trim() },  // {{2}}
+      { type: 'text', text: `${woning.kamers ?? ''}` },                    // {{3}}
+      { type: 'text', text: woning.objectsoort || '' },                    // {{4}}
+      { type: 'text', text: `${woning.woonoppervlakte ?? ''}` },           // {{5}}
+      { type: 'text', text: woning.buitenruimte || '' },                   // {{6}}
+      { type: 'text', text: woning.energielabel || '' },                   // {{7}}
+    ]
+  });
+
+  // -----------------------------------------------------
+  // Complet e payload
+  // -----------------------------------------------------
   const payload = {
     messaging_product: 'whatsapp',
     to,
     type: 'template',
     template: {
-      // ⚠️ Moet exact gelijk zijn aan de naam in Meta
-      name: 'aanbod_brochure',
-      language: { code: 'nl' }, // "Dutch" in je template-scherm
-      components: [
-        {
-          type: 'body',
-          parameters: [
-            { type: 'text', text: woning.plaats || '' },                                        // {{1}}
-            { type: 'text', text: `${woning.straat || ''} ${woning.huisnummer || ''}`.trim() }, // {{2}}
-            { type: 'text', text: `${woning.kamers ?? ''}` },                                   // {{3}}
-            { type: 'text', text: woning.objectsoort || '' },                                   // {{4}}
-            { type: 'text', text: `${woning.woonoppervlakte ?? ''}` },                          // {{5}}
-            { type: 'text', text: woning.buitenruimte || '' },                                  // {{6}}
-            { type: 'text', text: woning.energielabel || '' },                                  // {{7}}
-          ]
-        }
-      ]
+      name: templateName,
+      language: { code: 'nl' },
+      components
     }
   };
 
+  console.log('📤 Uitgaande WhatsApp payload:', JSON.stringify(payload, null, 2));
+
+  // -----------------------------------------------------
+  // Versturen
+  // -----------------------------------------------------
   try {
     const res = await fetch(url, {
       method: 'POST',
@@ -269,17 +363,17 @@ const imageUrl = woning.imageUrl || fallbackImageUrl;
     });
 
     const text = await res.text();
+
     if (!res.ok) {
-      console.error('❌ WhatsApp API fout', text);
+      console.error(`❌ WhatsApp API fout bij ${templateName}:`, text);
     } else {
-      console.log(`✅ WhatsApp verzonden naar ${zoekprofiel.telefoon}`);
-      console.log('📨 API-respons:', text);
+      console.log(`✅ WhatsApp (${templateName}) verzonden naar ${zoekprofiel.telefoon}`);
+      console.log('📨 API-response:', text);
     }
   } catch (err) {
     console.error('❌ Onverwachte fout bij WhatsApp-verzoek:', err);
   }
 }
-
 
 // ----------------------------------------------------
 // 6️⃣ Start server
