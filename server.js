@@ -184,6 +184,8 @@ woonoppervlakte: Number(algemeen.woonoppervlakte || 0),
 energielabel: algemeen.energieklasse || null,
 buitenruimte,
 objectsoort: objectType.objecttype || algemeen.woonhuissoort || 'woning',
+appartementsoort: rw.algemeen?.appartementsoort || null,
+
 // fundaUrl staat niet in dit v3-voorbeeld; later kun je die nog toevoegen als je de key
 weet
 fundaUrl: null,
@@ -326,7 +328,7 @@ async function sendWhatsAppAanbod(zoekprofiel, woning) {
       { type: 'text', text: woning.plaats || '' },                         // {{1}}
       { type: 'text', text: `${woning.straat || ''} ${woning.huisnummer || ''}`.trim() },  // {{2}}
       { type: 'text', text: `${woning.kamers ?? ''}` },                    // {{3}}
-      { type: 'text', text: woning.objectsoort || '' },                    // {{4}}
+      { type: 'text', text: woning.appartementsoort || woning.objectsoort || '' },                    // {{4}}
       { type: 'text', text: `${woning.woonoppervlakte ?? ''}` },           // {{5}}
       { type: 'text', text: woning.buitenruimte || '' },                   // {{6}}
       { type: 'text', text: woning.energielabel || '' },                   // {{7}}
