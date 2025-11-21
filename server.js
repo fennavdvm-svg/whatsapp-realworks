@@ -176,9 +176,6 @@ huisnummer: huisnummerStr,
 plaats: adres.plaats || null,
 postcode: adres.postcode || null,
 vraagprijs,
-file:///Users/fennavandevijvermakelaardij/whatsapp-realworks/server.js
-Pagina 2 van 5
-20-11-2025, 02:05
 kamers: Number(algemeen.aantalKamers || 0),
 woonoppervlakte: Number(algemeen.woonoppervlakte || 0),
 energielabel: algemeen.energieklasse || null,
@@ -296,7 +293,7 @@ async function sendWhatsAppAanbod(zoekprofiel, woning) {
   // Template kiezen
   const templateName = hasBrochure
     ? 'aanbod_brochure_pdf'      // Template met document-header
-    : 'aanbod_zonder_brochure';  // Jouw bestaande template
+    : 'aanbod_brochure';  // Jouw bestaande template
 
   console.log(`📨 Template gekozen: ${templateName}`);
 
