@@ -67,6 +67,14 @@ app.post('/realworks', async (req, res) => {
     console.log('🔍 Raw woning van Realworks:');
     console.log(JSON.stringify(woningRaw, null, 2));
     console.log("🔗 Realworks links:", JSON.stringify(woningRaw.links, null, 2));
+console.log('🗝️ Top-level keys in woningRaw:', Object.keys(woningRaw));
+
+// Specifiek de velden waar vaak documenten zitten:
+console.log('📂 woningRaw.documenten:', JSON.stringify(woningRaw.documenten, null, 2));
+console.log('📂 woningRaw.media:', JSON.stringify(woningRaw.media, null, 2));
+
+// Als je wilt nog wat extra gokjes:
+console.log('📂 woningRaw.diversen:', JSON.stringify(woningRaw.diversen, null, 2));
 
     const woning = mapRealworksObjectToInternalModel(woningRaw);
     console.log('📦 Gemapte woning:', woning);
