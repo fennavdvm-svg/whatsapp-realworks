@@ -96,45 +96,40 @@ console.log('📑 brochureUrl in woning:', woning.brochureUrl);
 // ----------------------------------------------------
 function mapRealworksObjectToInternalModel(rw) {
   const adres = rw.adres || {};
-const huisnummerStr = `${adres.huisnummer || ''}${
-    adres.huisnummertoevoeging ? ' ' + adres.huisnummertoevoeging : ''
-  }`.trim(); 
   const algemeen = rw.algemeen || {};
-  const prijs = rw.prijs || rw.financieel || {};
-  const opp = rw.oppervlakte || rw.maten || {};
-  const energie = rw.energie || rw.energielabel || {};
-const detail = rw.detail || {};
-const buiten = detail.buitenruimte || {};
-const financieel = (rw.financieel && rw.financieel.overdracht) || {};
-const diversen = (rw.diversen && rw.diversen.diversen) || {};
-const objectType = (rw.object && rw.object.type) || {};
-// ðŸ Huisnummer samenvoegen
-// ðŸ–¼ï¸ Hoofdfoto uit media[]
-let imageUrl = null;
-if (Array.isArray(rw.media)) {
-const hoofd = rw.media.find(m => m.soort === 'HOOFDFOTO' && m.link);
-if (hoofd) {
-imageUrl = hoofd.link;
-}
-}
-// ðŸŒ³ Simpele indicatie buitenruimte
-let buitenruimte = '';
-if (Array.isArray(buiten.tuintypes) && buiten.tuintypes.length > 0) {
-buitenruimte = 'TUIN';
-} else if ((buiten.oppervlakteGebouwgebondenBuitenruimte || 0) > 0) {
-buitenruimte = 'BALKON';
-}
-// ðŸ’¶ Vraagprijs (koopprijs als die er is, anders transactiewaarde)
-const vraagprijs =
-Number(financieel.koopprijs || financieel.transactieprijs || 0);
+  const detail = rw.detail || {};
+  const buiten = detail.buitenruimte || {};
+  const financieel = (rw.financieel && rw.financieel.overdracht) || {};
+  const diversen = (rw.diversen && rw.diversen.diversen) || {};
+  const objectType = (rw.object && rw.object.type) || {};
 
+  // 🏡 Huisnummer mooi samenvoegen: "242 B"
+  const huisnummerStr = `${adres.huisnummer || ''}${
+    adres.huisnummertoevoeging ? ' ' + adres.huisnummertoevoeging : ''
+  }`.trim();
+
+  // 🖼 Hoofdfoto uit media[]
+  let imageUrl = null;
+  if (Array.isArray(rw.media)) {
+    const hoofd = rw.media.find((m) => m.soort === 'HOOFDFOTO' && m.link);
+    if (hoofd) {
+      imageUrl = hoofd.link;
+    }
+  }
+
+  // 🌳 Simpele indicatie buitenruimte
+  let buitenruimte = '';
+  if (Array.isArray(buiten.tuintypes) && buiten.tuintypes.length > 0) {
+    buitenruimte = 'TUIN';
+  } else if ((buiten.oppervlakteGebouwgebondenBuitenruimte || 0) > 0) {
+    buitenruimte = 'BALKON';
+  }
+
+  // 💶 Vraagprijs (koopprijs als die er is, anders transactiewaarde)
+  const vraagprijs = Number(financieel.koopprijs || financieel.transactieprijs || 0);
 
   // -----------------------------
-  // Links / media uit Realworks
-  // -----------------------------
-  
-  // -----------------------------
-  // Brochure zoeken in media
+  // 📄 Brochure zoeken in media
   // -----------------------------
   const media = Array.isArray(rw.media) ? rw.media : [];
 
@@ -168,41 +163,23 @@ Number(financieel.koopprijs || financieel.transactieprijs || 0);
   console.log('🔗 Afgeleide brochureUrl:', brochureUrl);
 
   // -----------------------------
-  // Adres samenstellen
-  // -----------------------------
-  const huisnummer = `${huisnr.hoofdnummer || ''}${
-    huisnr.toevoeging ? ' ' + huisnr.toevoeging : ''
-  }`.trim();
-
-
-
-  console.log('📑 Gevonden brochureDoc:', brochureDoc);
-  console.log('🔗 brochureUrl:', brochureUrl);
-
-  // -----------------------------
   // Teruggeven in jouw interne vorm
   // -----------------------------
-
-return {
-id: diversen.objectcode || rw.id || null,
-straat: adres.straat || null,
-huisnummer: huisnummerStr,
-plaats: adres.plaats || null,
-postcode: adres.postcode || null,
-vraagprijs,
-kamers: Number(algemeen.aantalKamers || 0),
-woonoppervlakte: Number(algemeen.woonoppervlakte || 0),
-energielabel: algemeen.energieklasse || null,
-buitenruimte,
-objectsoort: objectType.objecttype || algemeen.woonhuissoort || 'woning',
-appartementsoort: rw.algemeen?.appartementsoort || null,
-
-// fundaUrl staat niet in dit v3-voorbeeld; later kun je die nog toevoegen als je de key
-// weet
-fundaUrl: null,
-// ðŸ”¥ Belangrijk voor je WhatsApp IMAGE-header
-imageUrl,
-    // ✨ NIEUW veld voor WhatsApp
+  return {
+    id: diversen.objectcode || rw.id || null,
+    straat: adres.straat || null,
+    huisnummer: huisnummerStr,
+    plaats: adres.plaats || null,
+    postcode: adres.postcode || null,
+    vraagprijs,
+    kamers: Number(algemeen.aantalKamers || 0),
+    woonoppervlakte: Number(algemeen.woonoppervlakte || 0),
+    energielabel: algemeen.energieklasse || null,
+    buitenruimte,
+    objectsoort: objectType.objecttype || algemeen.woonhuissoort || 'woning',
+    appartementsoort: algemeen.appartementsoort || null,
+    fundaUrl: null,
+    imageUrl,
     brochureUrl
   };
 }
