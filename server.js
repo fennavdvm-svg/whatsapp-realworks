@@ -70,7 +70,7 @@ app.post('/realworks', async (req, res) => {
 
     const woning = mapRealworksObjectToInternalModel(woningRaw);
     console.log('📦 Gemapte woning:', woning);
-
+console.log('📑 brochureUrl in woning:', woning.brochureUrl);
     const matches = vindMatchesVoorWoning(woning);
     console.log(`🎯 ${matches.length} matches gevonden`);
 
@@ -165,6 +165,11 @@ Number(financieel.koopprijs || financieel.transactieprijs || 0);
     huisnr.toevoeging ? ' ' + huisnr.toevoeging : ''
   }`.trim();
 
+
+
+  console.log('📑 Gevonden brochureDoc:', brochureDoc);
+  console.log('🔗 brochureUrl:', brochureUrl);
+
   // -----------------------------
   // Teruggeven in jouw interne vorm
   // -----------------------------
@@ -184,12 +189,12 @@ objectsoort: objectType.objecttype || algemeen.woonhuissoort || 'woning',
 appartementsoort: rw.algemeen?.appartementsoort || null,
 
 // fundaUrl staat niet in dit v3-voorbeeld; later kun je die nog toevoegen als je de key
-weet
+// weet
 fundaUrl: null,
 // ðŸ”¥ Belangrijk voor je WhatsApp IMAGE-header
-imageUrl
+imageUrl,
     // ✨ NIEUW veld voor WhatsApp
-    brochureUrl,
+    brochureUrl
   };
 }
 
