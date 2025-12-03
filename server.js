@@ -96,7 +96,9 @@ console.log('📑 brochureUrl in woning:', woning.brochureUrl);
 // ----------------------------------------------------
 function mapRealworksObjectToInternalModel(rw) {
   const adres = rw.adres || {};
-  const huisnr = adres.huisnummer || {};
+const huisnummerStr = `${adres.huisnummer || ''}${
+    adres.huisnummertoevoeging ? ' ' + adres.huisnummertoevoeging : ''
+  }`.trim(); 
   const algemeen = rw.algemeen || {};
   const prijs = rw.prijs || rw.financieel || {};
   const opp = rw.oppervlakte || rw.maten || {};
@@ -132,39 +134,40 @@ Number(financieel.koopprijs || financieel.transactieprijs || 0);
   // -----------------------------
   // Links / media uit Realworks
   // -----------------------------
-  const linksRaw = rw.links;
+  
+  // -----------------------------
+  // Brochure zoeken in media
+  // -----------------------------
+  const media = Array.isArray(rw.media) ? rw.media : [];
 
-  // Als rw.links een object is (met bv. links.funda)
-  const linksObj =
-    linksRaw && !Array.isArray(linksRaw) && typeof linksRaw === 'object'
-      ? linksRaw
-      : {};
-
-  // Kandidaten waar een brochure-DOCUMENT in kan zitten
-  let mediaCandidates = [];
-
-  if (Array.isArray(linksRaw)) {
-    mediaCandidates = mediaCandidates.concat(linksRaw);
-  }
-  if (Array.isArray(rw.media)) {
-    mediaCandidates = mediaCandidates.concat(rw.media);
-  }
-  if (Array.isArray(rw.documenten)) {
-    mediaCandidates = mediaCandidates.concat(rw.documenten);
-  }
-
-  // Zoek een DOCUMENT met titel/omschrijving die 'brochure' bevat
-  const brochureDoc = mediaCandidates.find((item) => {
+  // 1. Eerst een vrijgegeven DOCUMENT-pdf
+  let brochureDoc = media.find((item) => {
     if (!item) return false;
-    const titel = (item.titel || '').toLowerCase();
-    const omschrijving = (item.omschrijving || '').toLowerCase();
     return (
       item.soort === 'DOCUMENT' &&
-      (titel.includes('brochure') || omschrijving.includes('brochure'))
+      item.mimetype === 'application/pdf' &&
+      item.vrijgave === true
     );
   });
 
-  const brochureUrl = brochureDoc && brochureDoc.link ? brochureDoc.link : null;
+  // 2. Zo niet: pak gewoon de eerste DOCUMENT-pdf
+  if (!brochureDoc) {
+    brochureDoc = media.find((item) => {
+      if (!item) return false;
+      return (
+        item.soort === 'DOCUMENT' &&
+        item.mimetype === 'application/pdf'
+      );
+    });
+  }
+
+  let brochureUrl = null;
+  if (brochureDoc && brochureDoc.link) {
+    brochureUrl = brochureDoc.link;
+  }
+
+  console.log('📑 Gevonden brochureDoc:', brochureDoc);
+  console.log('🔗 Afgeleide brochureUrl:', brochureUrl);
 
   // -----------------------------
   // Adres samenstellen
