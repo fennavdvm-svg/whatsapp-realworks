@@ -109,8 +109,6 @@ const financieel = (rw.financieel && rw.financieel.overdracht) || {};
 const diversen = (rw.diversen && rw.diversen.diversen) || {};
 const objectType = (rw.object && rw.object.type) || {};
 // ðŸ Huisnummer samenvoegen
-const huisnummerStr = `${huisnr.hoofdnummer || ''}${huisnr.toevoeging ? ' ' +
-huisnr.toevoeging : ''}`.trim();
 // ðŸ–¼ï¸ Hoofdfoto uit media[]
 let imageUrl = null;
 if (Array.isArray(rw.media)) {
