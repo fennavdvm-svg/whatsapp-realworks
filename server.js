@@ -282,9 +282,7 @@ async function sendWhatsAppAanbod(zoekprofiel, woning) {
   const hasBrochure = !!woning.brochureUrl;
 
   // Template kiezen
-  const templateName = hasBrochure
-    ? 'aanbod_brochure_pdf'      // Template met document-header
-    : 'aanbod_brochure';  // Jouw bestaande template
+const templateName = 'purchase_receipt_1';
 
   console.log(`📨 Template gekozen: ${templateName}`);
 
