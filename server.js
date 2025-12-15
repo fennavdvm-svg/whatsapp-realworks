@@ -269,61 +269,20 @@ function vindMatchesVoorWoning(woning) {
 //  WhatsApp bericht sturen (met of zonder brochure)
 // ---------------------------------------------------------------------------
 async function sendWhatsAppAanbod(zoekprofiel, woning) {
-  // 06… -> 316….
   const to = '31' + zoekprofiel.telefoon.replace(/^0/, '');
-
   const url = `https://graph.facebook.com/${WA_VERSION}/${WA_PHONE_NUMBER_ID}/messages`;
 
-  // Fallback afbeelding voor je oude template (optioneel)
-  const fallbackImageUrl = 'https://via.placeholder.com/600x400?text=Nieuw+aanbod';
-  const imageUrl = woning.imageUrl || fallbackImageUrl;
+  const templateName = 'purchase_receipt_1';
 
-  // Check of er een brochure aanwezig is
-  const hasBrochure = !!woning.brochureUrl;
-
-  // Template kiezen
-const templateName = 'purchase_receipt_1';
-
-  console.log(`📨 Template gekozen: ${templateName}`);
-
-  // -----------------------------------------------------
-  // Bouw de components op basis van wel/geen brochure
-  // -----------------------------------------------------
-  const components = [];
-
-  // 1️⃣ HEADER alleen als brochure bestaat
-  if (hasBrochure) {
-    components.push({
-      type: 'header',
-      parameters: [
-        {
-          type: 'document',
-          document: {
-            link: woning.brochureUrl,
-            filename: `Brochure - ${woning.straat} ${woning.huisnummer}.pdf`
-          }
-        }
-      ]
-    });
+  // Als er geen brochure is: niet sturen (of je kunt hier een fallback-template doen)
+  if (!woning.brochureUrl) {
+    console.log('⚠️ Geen brochureUrl gevonden, bericht niet verstuurd');
+    return;
   }
 
-  // 2️⃣ BODY (zelfde in beide templates)
-  components.push({
-    type: 'body',
-    parameters: [
-      { type: 'text', text: woning.plaats || '' },                         // {{1}}
-      { type: 'text', text: `${woning.straat || ''} ${woning.huisnummer || ''}`.trim() },  // {{2}}
-      { type: 'text', text: `${woning.kamers ?? ''}` },                    // {{3}}
-      { type: 'text', text: woning.appartementsoort || woning.objectsoort || '' },                    // {{4}}
-      { type: 'text', text: `${woning.woonoppervlakte ?? ''}` },           // {{5}}
-      { type: 'text', text: woning.buitenruimte || '' },                   // {{6}}
-      { type: 'text', text: woning.energielabel || '' },                   // {{7}}
-    ]
-  });
+  console.log(`📨 Template gekozen: ${templateName}`);
+  console.log('📄 brochureUrl:', woning.brochureUrl);
 
-  // -----------------------------------------------------
-  // Complet e payload
-  // -----------------------------------------------------
   const payload = {
     messaging_product: 'whatsapp',
     to,
@@ -331,15 +290,40 @@ const templateName = 'purchase_receipt_1';
     template: {
       name: templateName,
       language: { code: 'nl' },
-      components
+      components: [
+        // ✅ HEADER: PDF document
+        {
+          type: 'header',
+          parameters: [
+            {
+              type: 'document',
+              document: {
+                link: woning.brochureUrl,
+                filename: `Brochure - ${woning.straat || ''} ${woning.huisnummer || ''}`.trim() + '.pdf'
+              }
+            }
+          ]
+        },
+
+        // ✅ BODY: jouw 7 variabelen
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: woning.plaats || '' }, // {{1}}
+            { type: 'text', text: `${woning.straat || ''} ${woning.huisnummer || ''}`.trim() }, // {{2}}
+            { type: 'text', text: String(woning.kamers ?? '') }, // {{3}}
+            { type: 'text', text: (woning.appartementsoort || woning.objectsoort || '') }, // {{4}}
+            { type: 'text', text: String(woning.woonoppervlakte ?? '') }, // {{5}}
+            { type: 'text', text: woning.buitenruimte || '' }, // {{6}}
+            { type: 'text', text: woning.energielabel || '' } // {{7}}
+          ]
+        }
+      ]
     }
   };
 
   console.log('📤 Uitgaande WhatsApp payload:', JSON.stringify(payload, null, 2));
 
-  // -----------------------------------------------------
-  // Versturen
-  // -----------------------------------------------------
   try {
     const res = await fetch(url, {
       method: 'POST',
@@ -362,6 +346,7 @@ const templateName = 'purchase_receipt_1';
     console.error('❌ Onverwachte fout bij WhatsApp-verzoek:', err);
   }
 }
+
 
 // ----------------------------------------------------
 // 6️⃣ Start server
